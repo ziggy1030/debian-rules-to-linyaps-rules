@@ -36,8 +36,8 @@ user-invocable: false
 6. 对多个 Package 条目的构建依赖做并集去重
 7. 解析 `Description:` 字段（取第一个 Package 条目的描述）
 8. 基于 apt 仓库逐包查询 Build-Depends 的运行时依赖：
-   - 调用 `scripts/parse-control.py <control_file>` → 输出 YAML（含 buildDepends）
-   - 调用 `scripts/resolve-runtime-deps.py <control_yaml>` → 输出 YAML（含 runtimeDepends）
+- 调用 `scripts/parse-control.py <control_file>` → 输出 YAML（含 buildDepends）
+  - 调用 `scripts/resolve-runtime-deps.py <control_yaml> --blacklist runtime-depends-blacklist.json` → 输出 YAML（含 runtimeDepends，已过滤黑名单包）
    - Agent 合并两个 YAML 结果
 9. 输出结构化结果
 
@@ -74,3 +74,4 @@ binaryPackages:
 - 使用 `scripts/resolve-runtime-deps.py` 查询运行时依赖
 - 运行时依赖通过 `LC_ALL=C apt-cache depends` 查询，需要系统已配置 apt 仓库
 - 若 `apt-cache` 不可用或查询失败，`runtimeDepends` 输出空列表（不影响主流程）
+- 支持黑名单机制：`runtime-depends-blacklist.json` 中列出的包名会被从 `runtimeDepends` 中剔除，避免编译器、Mesa 驱动等非应用核心组件被错误写入
