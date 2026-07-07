@@ -77,8 +77,17 @@ project_path: <项目路径>
 
 **执行方式**：
 - 读取 `debian/control` 完整文本
-- 执行 `scripts/parse-control.py <control_file>`
+- 执行 `scripts/parse-control.py <control_file>` → 输出 control YAML（含 buildDepends）
+- 执行 `scripts/resolve-runtime-deps.py <control_yaml>` → 输出 runtime YAML（含 runtimeDepends）
+- Agent 合并两者为完整的 control 信息
 - 输出结构化信息 YAML
+
+### Step 2.5: (内置在 analyze-control 中) 解析运行时依赖
+
+运行时依赖解析已集成到 Step 2 中：
+1. `parse-control.py` 先提取 Build-Depends 列表
+2. `resolve-runtime-deps.py` 基于 apt 仓库查询每个构建依赖包的运行时 Depends + Recommends
+3. 合并后输出完整的 control 信息（含 runtimeDepends）
 
 ### Step 3: 加载子 Skill — `src2linyaps.debian.analyze-rules`
 
