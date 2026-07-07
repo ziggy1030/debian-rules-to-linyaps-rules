@@ -85,12 +85,48 @@ else
     echo "SKIP: control 文件不存在"
 fi
 
+# 测试 1.5: resolve-runtime-deps.py 解析运行时依赖
+echo ""
+echo "--- 测试 1.5: resolve-runtime-deps.py 解析运行时依赖 ---"
+if command -v apt-cache &>/dev/null; then
+    python3 "$PROJECT_ROOT/skills/src2linyaps.debian.analyze-control/scripts/resolve-runtime-deps.py" \
+        "/tmp/control-output.yaml" > /tmp/runtime-output.yaml
+    echo "resolve-runtime-deps.py 执行成功"
+    cat /tmp/runtime-output.yaml
+
+    # 验证 runtimeDepends 非空
+    RT_COUNT=$(sed -n '/^runtimeDepends:/,/^[a-z]/p' /tmp/runtime-output.yaml | grep -c '^- ' || true)
+    if [ "$RT_COUNT" -ge 1 ]; then
+        echo "  ✓ runtimeDepends 列表非空 ($RT_COUNT 项)"
+    else
+        echo "  ⚠ runtimeDepends 为空（apt 仓库可能不完整）"
+    fi
+else
+    echo "SKIP: apt-cache 命令不可用"
+fi
+
 # 测试 2: analyze-rules.py 解析
 echo ""
 echo "--- 测试 2: analyze-rules.py 解析 debian 规则 ---"
 if [ -f "$RULES_FILE" ] && [ -f "$CHANGELOG_FILE" ]; then
+    # 合并 control 和 runtime 信息
+    python3 -c "
+import yaml
+with open('/tmp/control-output.yaml') as f:
+    c = yaml.safe_load(f)
+try:
+    with open('/tmp/runtime-output.yaml') as f:
+        r = yaml.safe_load(f)
+    if r and 'runtimeDepends' in r:
+        c['runtimeDepends'] = r['runtimeDepends']
+except FileNotFoundError:
+    c['runtimeDepends'] = []
+with open('/tmp/merged-control.yaml', 'w') as f:
+    yaml.dump(c, f)
+" 2>/dev/null || true
+
     python3 "$PROJECT_ROOT/skills/src2linyaps.debian.analyze-rules/scripts/analyze-rules.py" \
-        "$KATE_SRC_DIR" "$DEB_EXTRACT_DIR/debian" "/tmp/control-output.yaml" > /tmp/rules-output.yaml
+        "$KATE_SRC_DIR" "$DEB_EXTRACT_DIR/debian" "/tmp/merged-control.yaml" > /tmp/rules-output.yaml
     echo "analyze-rules.py 执行成功"
     cat /tmp/rules-output.yaml
 
@@ -118,6 +154,12 @@ if [ -f "$RULES_FILE" ] && [ -f "$CHANGELOG_FILE" ]; then
     # 验证资源文件扫描
     if grep -q 'resources:' /tmp/rules-output.yaml; then
         echo "  ✓ resources 段存在"
+    fi
+
+    # 验证 runtimeDepends 转发到最终输出
+    RT_OUT_COUNT=$(sed -n '/^runtimeDepends:/,/^[a-z]/p' /tmp/rules-output.yaml | grep -c '^- ' || true)
+    if [ "$RT_OUT_COUNT" -ge 1 ]; then
+        echo "  ✓ runtimeDepends 已转发到最终输出 ($RT_OUT_COUNT 项)"
     fi
 else
     echo "SKIP: rules 或 changelog 文件不存在"

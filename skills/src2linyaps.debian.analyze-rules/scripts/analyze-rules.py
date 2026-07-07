@@ -178,6 +178,7 @@ def analyze(project_path: str, debian_path: str, control_info: dict = None) -> d
         result['pkgName'] = control_info.get('pkgName', '')
         result['pkgDescription'] = control_info.get('pkgDescription', '')
         result['build_depends'] = control_info.get('buildDepends', [])
+        result['runtimeDepends'] = control_info.get('runtimeDepends', [])
 
     return result
 
