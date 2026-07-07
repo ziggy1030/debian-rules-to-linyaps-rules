@@ -2,7 +2,7 @@
 name: src2linyaps.debian.analyze-rules
 description: >
   分析 debian 构建规则和资源文件，输出包含构建工具类型、编译参数及默认值、
-  baseline 版本、源码包名、合并后资源列表的最终 YAML。
+  baseline 版本、源码包名、合并后资源列表、build_section 的最终 YAML。
 user-invocable: false
 ---
 
@@ -10,11 +10,13 @@ user-invocable: false
 
 分析 `debian/rules` 中的 dh 命令序列和构建参数，解析 `debian/changelog` 提取 baseline 版本，
 关联扫描 `debian/*.install`、`debian/*.links`、`debian/*.docs`、`debian/*.manpages` 等资源文件，
-合并多个 binary 包的资源文件列表，输出最终 YAML。
+合并多个 binary 包的资源文件列表，基于构建工具类型和参数生成 `build_section`（可直接写入
+`linglong.yaml` 的 `build:` 字段的 shell 脚本），输出最终 YAML。
 
 ## 触发场景
 
 由主 Agent (`debian-rules-to-linyaps`) 在路径 A 工作流中编排调用，在执行完 `src2linyaps.debian.analyze-control` 后执行。
+输出中的 `build_section` 字段将传递给 `src2linyaps.debian.build-res-generate` 用于组装最终的 `linglong.yaml`。
 
 ## 输入
 
@@ -36,7 +38,13 @@ user-invocable: false
 4. 扫描 `debian/*.links`、`debian/*.docs`、`debian/*.manpages` 等资源文件
 5. 扫描 `debian/*.postinst`、`debian/*.prerm` 等 post 脚本，去重记录
 6. 合并所有 binary 包的资源到单一输出
-7. 组装最终 YAML
+7. 基于构建工具类型和编译参数生成 `build_section` 构建脚本：
+   - cmake: 生成 `cmake -B build-linglong ...` + `cmake --build ...` + `cmake --install ...`
+   - meson: 生成 `meson setup build-linglong ...` + `ninja -C build-linglong` + `meson install ...`
+   - make: 生成 `make -j$(nproc)` + `make install DESTDIR=${prefix}`
+   - autotools: 生成 `./configure --prefix=${prefix} ...` + `make -j$(nproc)` + `make install`
+   - 未知工具类型: 使用默认资源拷贝命令
+8. 组装最终 YAML（含 build_section 字段）
 
 ## 输出
 
@@ -63,6 +71,13 @@ resources:
       dest: /usr/share/
   manpages:
     - usr/share/man/man1/kate.1
+build_section: |
+  cmake -B build-linglong \
+    -DCMAKE_INSTALL_PREFIX=${prefix} \
+    -DCMAKE_BUILD_TYPE=Release \
+    -DBUILD_TESTING=OFF
+  cmake --build build-linglong -j$(nproc)
+  cmake --install build-linglong
 ```
 
 ## 约束

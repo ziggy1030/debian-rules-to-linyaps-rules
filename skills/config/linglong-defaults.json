@@ -1,0 +1,8 @@
+{
+  "base": "org.deepin.base/25.2.2",
+  "runtime": "org.deepin.runtime.dtk/25.2.2",
+  "architecture": "x86_64",
+  "version": "0.0.0.1",
+  "command": [],
+  "build_section_fallback": "cp -rf /project/binary/* ${prefix}/\ncp -rf /project/files_res/* ${prefix}/\ntouch ${prefix}/.linyaps_genius\nchmod -R 755 ${prefix}"
+}

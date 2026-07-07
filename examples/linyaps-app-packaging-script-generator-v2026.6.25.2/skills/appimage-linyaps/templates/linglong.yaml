@@ -1,0 +1,28 @@
+version: "${ll_version}"
+
+package:
+  id: ${package_id}
+  name: "${app_name}"
+  version: ${ll_version}
+  kind: app
+  architecture: ${ll_architecture}
+  description: |
+    ${description}
+
+base: ""
+runtime: ""
+
+command: ""
+
+build: |
+  ## Extract AppImage res
+  # binary/ 的内容直接对应 $prefix/ (files/)
+  # AppImage 的 squashfs-root 保持原始結構，安裝到 lib/${APP_PREFIX}/
+  cp -rf /project/binary/* ${prefix}/
+
+  # 複製桌面文件、圖標等資源
+  cp -rf /project/files_res/* ${prefix}/
+
+  # Add an identity for LLM
+  touch ${prefix}/.linyaps_genius
+  chmod -R 755 ${prefix}

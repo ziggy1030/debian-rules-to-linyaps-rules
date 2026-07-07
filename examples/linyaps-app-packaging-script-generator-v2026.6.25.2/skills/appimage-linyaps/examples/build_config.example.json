@@ -1,0 +1,23 @@
+{
+  "_comment": "appimage-linyaps 構建配置文件 — 分組結構，main 為必填，optional 為可選",
+
+  "main": {
+    "appimage_file": "/path/to/application.AppImage",
+    "appimage_url": "",
+    "app_name": "My Application",
+    "package_id": "com.example.myapp",
+    "description": "A sample application converted from AppImage",
+    "exec_command": "",
+    "icon_url": ""
+  },
+
+  "optional": {
+    "app_version": "",
+    "base_id": "org.deepin.base",
+    "base_version": "25.2.2",
+    "runtime_id": "org.deepin.runtime.dtk",
+    "runtime_version": "25.2.2",
+    "linyaps_arch": "x86_64",
+    "output_dir": "./output"
+  }
+}

@@ -1,0 +1,3 @@
+参考现在deb-linglong业务流程设计一个新的skills，用于把linux binary release tar归档包转换称玲珑应用便捷打包脚本，我认为应该要遵守这个工作流程:
+
+解压提取用户提供的tar归档-->用户提供具体的`binary-name`, `app-name`, `app-short-desc`, `app-version` (optional)-->分析项目信息(版本号、应用名分析)-->分析项目是否包含CMakeList、Makefile等常见编译配置文件来判断是源码包还是binary release-->扫描目录是否包含"*.desktop文件"-->包含"*.desktop文件"则无需处理，参考deb-linglong的pak_linyaps模板和配套脚本自动根据*.desktop Exec提取实际binary name-->不包含"*.desktop文件", 根据用户提供的`binary-name`, `app-name`, `app-short-desc`, `app-version` 生成"*.desktop文件", 需要检查`binary-name`是否真实存在并可执行. 用户提供的`binary-name`不存在，则可以使用一个固定脚本，扫描tar解压根目录中的所有可执行非`*.so`文件， 每一个二进制timeout运行15s，如果可以长期运行则判定为binary name.-->最终`*.desktop`存在并作为template使用, 参考skill `linglong-project-gen`创建一个for tar-linyaps的子skills
