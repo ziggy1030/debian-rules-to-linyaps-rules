@@ -1,0 +1,66 @@
+{
+  "checks": [
+    {
+      "pattern": "scripts/",
+      "type": "directory"
+    },
+    {
+      "pattern": "templates/",
+      "type": "directory"
+    },
+    {
+      "pattern": "templates/files_res/",
+      "type": "directory"
+    },
+    {
+      "pattern": "templates/files_res/share/",
+      "type": "directory"
+    },
+    {
+      "pattern": "templates/files_res/share/applications/",
+      "type": "directory"
+    },
+    {
+      "pattern": "templates/files_res/share/icons/",
+      "type": "directory"
+    },
+    {
+      "pattern": "templates/files_res/share/icons/hicolor/",
+      "type": "directory"
+    },
+    {
+      "pattern": "pak_linyaps.sh",
+      "type": "file"
+    },
+    {
+      "pattern": "scripts/dedup_desktop_files.sh",
+      "type": "file"
+    },
+    {
+      "pattern": "scripts/handle_special_paths.sh",
+      "type": "file"
+    },
+    {
+      "pattern": "scripts/validate_bin_nesting.sh",
+      "type": "file"
+    },
+    {
+      "pattern": "templates/linglong.yaml",
+      "type": "file"
+    },
+    {
+      "pattern": "templates/files_res/share/applications/*.desktop",
+      "type": "file",
+      "min": 1
+    },
+    {
+      "pattern": "templates/files_res/share/icons/hicolor/*/apps/*.png",
+      "type": "file",
+      "min": 1
+    }
+  ],
+  "executable": [
+    "pak_linyaps.sh",
+    "scripts/*.sh"
+  ]
+}

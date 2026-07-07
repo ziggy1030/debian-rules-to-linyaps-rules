@@ -1,0 +1,33 @@
+{
+  "description": "URL 架構關鍵字到 linyaps arch 的映射表。以映射表為主，無法識別時留給 LLM 分析。",
+  "token_map": {
+    "amd64": "x86_64",
+    "x64": "x86_64",
+    "x86_64": "x86_64",
+    "intel": "x86_64",
+    "i386": null,
+    "i686": null,
+    "arm64": "arm64",
+    "aarch64": "arm64",
+    "armv8": "arm64",
+    "armhf": null,
+    "armv7": null
+  },
+  "regex_patterns": [
+    {
+      "pattern": "linux-deb-(x64|arm64)",
+      "map_to": { "x64": "x86_64", "arm64": "arm64" },
+      "description": "VS Code 風格的 update URL: linux-deb-x64/stable"
+    },
+    {
+      "pattern": "linux-(x86_64|aarch64|arm64)",
+      "map_to": { "x86_64": "x86_64", "aarch64": "arm64", "arm64": "arm64" },
+      "description": "通用 linux- 前綴架構: firefox-xxx.linux-x86_64.tar.xz"
+    },
+    {
+      "pattern": "_(amd64|arm64)\\.deb$",
+      "map_to": { "amd64": "x86_64", "arm64": "arm64" },
+      "description": "Debian 套件後綴: opera-stable_130.0_amd64.deb"
+    }
+  ]
+}
