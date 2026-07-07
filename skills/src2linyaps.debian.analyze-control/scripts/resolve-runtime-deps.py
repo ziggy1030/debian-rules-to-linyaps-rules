@@ -6,8 +6,10 @@ resolve-runtime-deps.py — 基于 apt 仓库解析构建依赖的运行时依�
 逐包调用 apt-cache depends 查询运行时 Depends 和 Recommends，
 去重后输出 runtimeDepends 列表。
 
+支持 --blacklist 参数，用于过滤不应写入 runtimeDepends 的包（如编译器、Mesa 驱动等）。
+
 用法:
-    python3 resolve-runtime-deps.py <control_yaml_path>
+    python3 resolve-runtime-deps.py <control_yaml_path> [--blacklist <blacklist_json_path>]
 
 输出 (stdout, YAML格式):
     runtimeDepends:
@@ -17,6 +19,8 @@ resolve-runtime-deps.py — 基于 apt 仓库解析构建依赖的运行时依�
 """
 
 import sys
+import os
+import json
 import re
 import subprocess
 import yaml
@@ -83,8 +87,14 @@ def query_apt_depends(pkg: str) -> list:
     return deps
 
 
-def resolve_runtime_depends(build_depends: list) -> list:
-    """解析所有 Build-Depends 包的运行时依赖，去重后返回。"""
+def resolve_runtime_depends(build_depends: list, blacklist: set = None) -> list:
+    """解析所有 Build-Depends 包的运行时依赖，去重后返回。
+
+    blacklist: 需要从结果中排除的包名集合。
+    """
+    if blacklist is None:
+        blacklist = set()
+
     seen = set()
     runtime_deps = []
 
@@ -96,19 +106,46 @@ def resolve_runtime_depends(build_depends: list) -> list:
 
         deps = query_apt_depends(pkg)
         for d in deps:
-            if d not in seen:
+            if d not in seen and d not in blacklist:
                 seen.add(d)
                 runtime_deps.append(d)
 
     return sorted(runtime_deps)
 
 
+def load_blacklist(path: str) -> set:
+    """从 JSON 文件加载黑名单包名集合。文件不存在时给出警告并返回空集合。"""
+    if not path or not os.path.isfile(path):
+        if path:
+            print(f"WARNING: 黑名单文件不存在: {path}，跳过过滤", file=sys.stderr)
+        return set()
+    try:
+        with open(path, 'r', encoding='utf-8') as f:
+            data = json.load(f)
+        if not isinstance(data, list):
+            print(f"WARNING: 黑名单文件 {path} 格式错误（需要 JSON 数组），跳过过滤", file=sys.stderr)
+            return set()
+        return set(data)
+    except (json.JSONDecodeError, IOError) as e:
+        print(f"WARNING: 读取黑名单文件失败 {path}: {e}，跳过过滤", file=sys.stderr)
+        return set()
+
+
 def main():
     if len(sys.argv) < 2:
-        print("用法: python3 resolve-runtime-deps.py <control_yaml_path>", file=sys.stderr)
+        print("用法: python3 resolve-runtime-deps.py <control_yaml_path> [--blacklist <blacklist_json_path>]", file=sys.stderr)
         sys.exit(1)
 
+    # 解析参数
     yaml_path = sys.argv[1]
+    blacklist_path = None
+    if len(sys.argv) >= 4 and sys.argv[2] == '--blacklist':
+        blacklist_path = sys.argv[3]
+
+    blacklist = load_blacklist(blacklist_path)
+    if blacklist:
+        print(f"INFO: 已加载 {len(blacklist)} 个黑名单包名", file=sys.stderr)
+
     try:
         with open(yaml_path, 'r', encoding='utf-8') as f:
             control_info = yaml.safe_load(f)
@@ -125,7 +162,7 @@ def main():
         print(yaml.dump({'runtimeDepends': []}, default_flow_style=False, allow_unicode=True, sort_keys=False))
         return
 
-    runtime_deps = resolve_runtime_depends(build_depends)
+    runtime_deps = resolve_runtime_depends(build_depends, blacklist)
     result = {'runtimeDepends': runtime_deps}
     print(yaml.dump(result, default_flow_style=False, allow_unicode=True, sort_keys=False))
 
