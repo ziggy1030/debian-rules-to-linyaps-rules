@@ -129,8 +129,6 @@ command: ""                     # 默认值，用户可覆盖
     --build-section "<build_section>" \
     --package-version <baseline> \
     --defaults skills/config/linglong-defaults.json \
-    --template-with-deps examples/linglong.withDeps.yaml \
-    --template-without-deps examples/linglong.withoutDeps.yaml \
     --output output/${tag}/linglong.yaml
   ```
 - 使用 `--defaults` 中的值作为 Architecture/base/runtime/command 的默认值
