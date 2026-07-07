@@ -27,14 +27,12 @@ user-invocable: false
 | `architecture` | string | 玲珑架构（默认 `x86_64`） | `defaults.json` |
 | `base` | string | base 镜像 | `defaults.json` |
 | `runtime` | string | runtime 镜像 | `defaults.json` |
-| `command` | string | 启动命令 | `defaults.json` |
+| `command` | string | 启动命令，按空格切割为 YAML 数组元素 | `defaults.json` |
 
 ## 工作流程
 
 1. 加载 `analyze-control` 输出的 control_info YAML
-2. 根据 `buildDepends` 是否非空选择模板：
-   - 非空 → `linglong.withDeps.yaml` 风格（含 `build_depends` + `depends`）
-   - 空 → `linglong.withoutDeps.yaml` 风格（仅 `depends`）
+2. 根据 `buildDepends` 是否非空决定是否含 `build_depends` 段
 3. 加载 `skills/config/linglong-defaults.json` 获取默认值
 4. 按优先级解析各字段：CLI 参数 > defaults JSON > 硬编码默认值
 5. 对 `buildDepends` 剥离版本约束（`cmake (>= 3.16~)` → `cmake`）
@@ -49,26 +47,34 @@ user-invocable: false
 #
 # SPDX-License-Identifier: LGPL-3.0-or-later
 
-version: 25.4.3.2
+version: "25.4.3.2"
+
 package:
-  id: kate
-  name: kate
-  version: 25.4.3.2
+  id: "kate"
+  name: "kate"
+  version: "25.4.3.2"
   kind: app
   architecture: x86_64
-  description: powerful text editor
+  description: "powerful text editor"
+
 base: org.deepin.base/25.2.2
+
 runtime: org.deepin.runtime.dtk/25.2.2
+
 buildext:
   apt:
     build_depends:
     - debhelper-compat
     - cmake
-    - extra-cmake-modules
     depends:
     - libc6
     - libcurl4
-command: ''
+
+command:
+- "kate"
+- "--new"
+- "file.txt"
+
 build: |
   cmake -B build-linglong -DCMAKE_INSTALL_PREFIX=${prefix} ...
 ```
@@ -82,6 +88,7 @@ build: |
 - 若 `build_section` 为空，使用 `defaults.json` 中的 `build_section_fallback`
 - 脚本使用 `skills/config/linglong-defaults.json` 作为默认值参考
 - 使用 `scripts/generate-linglong-yaml.py` 辅助生成
+- 使用 `scripts/validate-linglong-yaml.py` 验证生成结果格式
 
 ## 默认值配置 (`skills/config/linglong-defaults.json`)
 
@@ -91,7 +98,7 @@ build: |
   "runtime": "org.deepin.runtime.dtk/25.2.2",
   "architecture": "x86_64",
   "version": "0.0.0.1",
-  "command": "",
+  "command": "bash",
   "build_section_fallback": "cp -rf /project/binary/* ${prefix}/\n..."
 }
 ```

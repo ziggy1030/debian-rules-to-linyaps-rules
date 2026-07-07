@@ -1,15 +1,13 @@
 #!/usr/bin/env python3
 """
 generate-linglong-yaml.py — 基于 analyze-control 输出的依赖信息 + analyze-rules 输出的 build 段，
-结合模板和默认值配置，生成完整的 linglong.yaml。
+结合默认值配置，生成完整的 linglong.yaml。
 
 用法:
     python3 generate-linglong-yaml.py \\
         --control-info <path> \\
         --build-section <string> \\
         --package-version <version> \\
-        --template-with-deps <path> \\
-        --template-without-deps <path> \\
         --output <path> \\
         [--defaults <path>] \\
         [--architecture <arch>] \\
@@ -33,14 +31,23 @@ SPDX_HEADER = """# SPDX-FileCopyrightText: 2023 UnionTech Software Technology Co
 """
 
 
+class QuotedStr(str):
+    """标记为 YAML 双引号标量的字符串"""
+
+
 class LiteralBlock(str):
     """标记为 YAML 字面块标量 (|) 的字符串"""
+
+
+def quoted_str_representer(dumper, data):
+    return dumper.represent_scalar('tag:yaml.org,2002:str', data, style='"')
 
 
 def literal_block_representer(dumper, data):
     return dumper.represent_scalar('tag:yaml.org,2002:str', data, style='|')
 
 
+yaml.add_representer(QuotedStr, quoted_str_representer)
 yaml.add_representer(LiteralBlock, literal_block_representer)
 
 
@@ -65,6 +72,19 @@ def get_value(cli_val, default_val):
     return cli_val if cli_val is not None else default_val
 
 
+def add_section_breaks(yaml_str: str) -> str:
+    top_level_keys = {'package', 'base', 'runtime', 'command', 'buildext', 'build'}
+    lines = yaml_str.split('\n')
+    result = []
+    for line in lines:
+        if line and not line.startswith(' ') and ':' in line:
+            key = line.split(':')[0].strip()
+            if key in top_level_keys:
+                result.append('')
+        result.append(line)
+    return '\n'.join(result)
+
+
 def build_yaml(data, build_section, version, architecture, base, runtime, command, with_deps):
     pkg_name = data.get('pkgName', '') or ''
     description = data.get('pkgDescription', '') or ''
@@ -76,22 +96,25 @@ def build_yaml(data, build_section, version, architecture, base, runtime, comman
     if not build_section.endswith('\n'):
         build_section += '\n'
 
+    desc_value = LiteralBlock(description) if '\n' in description else QuotedStr(description)
+    cmd_list = [QuotedStr(c) for c in command.split()] if command else [QuotedStr('bash')]
+
     result = {
-        'version': version,
+        'version': QuotedStr(version),
         'package': {
-            'id': pkg_name,
-            'name': pkg_name,
-            'version': version,
+            'id': QuotedStr(pkg_name),
+            'name': QuotedStr(pkg_name),
+            'version': QuotedStr(version),
             'kind': 'app',
             'architecture': architecture,
-            'description': description,
+            'description': desc_value,
         },
         'base': base,
         'runtime': runtime,
         'buildext': {
             'apt': {},
         },
-        'command': command if command else '',
+        'command': cmd_list,
         'build': LiteralBlock(build_section),
     }
 
@@ -114,8 +137,6 @@ def main():
     parser.add_argument('--runtime', default=None)
     parser.add_argument('--command', default=None)
     parser.add_argument('--defaults', default='')
-    parser.add_argument('--template-with-deps', required=True)
-    parser.add_argument('--template-without-deps', required=True)
     parser.add_argument('--output', required=True)
     args = parser.parse_args()
 
@@ -132,16 +153,19 @@ def main():
     architecture = get_value(args.architecture, defaults.get('architecture', 'x86_64'))
     base = get_value(args.base, defaults.get('base', ''))
     runtime = get_value(args.runtime, defaults.get('runtime', ''))
-    command = get_value(args.command, defaults.get('command', ''))
+    command = get_value(args.command, defaults.get('command', 'bash'))
     build_section = args.build_section if args.build_section else defaults.get('build_section_fallback', '')
 
     result = build_yaml(control_info, build_section, version, architecture, base, runtime, command, with_deps)
+
+    raw = yaml.dump(result, default_flow_style=False, allow_unicode=True, sort_keys=False, width=4096)
+    formatted = add_section_breaks(raw)
 
     os.makedirs(os.path.dirname(args.output) or '.', exist_ok=True)
     with open(args.output, 'w', encoding='utf-8') as f:
         f.write(SPDX_HEADER)
         f.write('\n')
-        yaml.dump(result, f, default_flow_style=False, allow_unicode=True, sort_keys=False, width=4096)
+        f.write(formatted)
 
     print(f"linglong.yaml generated: {args.output}")
 
