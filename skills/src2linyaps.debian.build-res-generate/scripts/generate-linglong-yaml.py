@@ -95,6 +95,8 @@ def build_yaml(data, build_section, version, architecture, base, runtime, comman
 
     if not build_section.endswith('\n'):
         build_section += '\n'
+    build_section += 'touch ${PREFIX}/.linyaps_genius\n'
+    build_section += 'chmod -R 755 ${PREFIX}\n'
 
     desc_value = LiteralBlock(description) if '\n' in description else QuotedStr(description)
     cmd_list = [QuotedStr(c) for c in command.split()] if command else [QuotedStr('bash')]
