@@ -93,6 +93,7 @@ def build_yaml(data, build_section, version, architecture, base, runtime, comman
 
     build_depends = [strip_version_constraint(d) for d in raw_build_depends if strip_version_constraint(d)]
 
+    build_section = build_section.replace('${prefix}', '${PREFIX}')
     if not build_section.endswith('\n'):
         build_section += '\n'
     build_section += 'touch ${PREFIX}/.linyaps_genius\n'
