@@ -165,11 +165,14 @@ tool_type: <上一步输出的工具类型>
 
 ## Phase 4: 输出校验与写入
 
-1. 校验 `linglong.yaml` 完整性：
-   - `package.id` 字段必须存在且非空
-   - `version` 字段必须存在且非空
-   - `buildext.apt` 字段必须存在
-   - `build` 字段必须存在且非空
+1. 使用 `validate-linglong-yaml.py` 校验 `linglong.yaml` 格式与字段合法性：
+   ```
+   python3 skills/src2linyaps.debian.build-res-generate/scripts/validate-linglong-yaml.py \
+     output/${tag}/linglong.yaml \
+     --schema skills/config/linglong-schema.yaml
+   ```
+   - 退出码 0 则通过，继续步骤 2
+   - 退出码非 0 则输出错误列表并终止（失败处理）
 2. 将最终 `linglong.yaml` 写入 `output/${tag}/linglong.yaml`
 3. 输出 `output/${tag}/linglong.yaml` 路径给用户
 

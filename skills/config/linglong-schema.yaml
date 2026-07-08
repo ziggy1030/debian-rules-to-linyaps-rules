@@ -1,0 +1,37 @@
+# SPDX-FileCopyrightText: 2023 UnionTech Software Technology Co., Ltd.
+#
+# SPDX-License-Identifier: LGPL-3.0-or-later
+
+# 基于 docs/manifests-for-yaml.md 定义的合法字段结构约束
+# 用于 validate-linglong-yaml.py 检查生成的 linglong.yaml 是否包含非法字段
+
+version: "1"
+
+# 合法顶级字段白名单
+top_level:
+  allowed:
+    - version
+    - package
+    - command
+    - base
+    - runtime
+    - sources
+    - exclude
+    - include
+    - build
+    - buildext
+    - modules
+
+# 禁止出现的字段路径（点号分隔嵌套路径）
+# 命中任意一条即报错，并展示对应 message
+forbidden_paths:
+  - path: "build.install"
+    message: "字段 'install' 不是 'build' 的合法子字段（参见 docs/manifests-for-yaml.md#构建规则-build）"
+  - path: "build.build_env"
+    message: "字段 'build_env' 不是 'build' 的合法子字段（参见 docs/manifests-for-yaml.md#构建规则-build）"
+  - path: "build.manual.install"
+    message: "字段 'install' 不是 'build.manual' 的合法子字段（参见 docs/manifests-for-yaml.md#构建规则-build）"
+  - path: "build.manual.build_env"
+    message: "字段 'build_env' 不是 'build.manual' 的合法子字段（参见 docs/manifests-for-yaml.md#构建规则-build）"
+  - path: "build.manual.xxx"
+    message: "字段 'build.manual' 下仅允许 'build' 子字段（参见 docs/manifests-for-yaml.md#构建规则-build）"
