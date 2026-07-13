@@ -68,7 +68,7 @@ def extract_build_args_from_rules(rules_path: str, build_tool: str) -> list:
     """Extract build arguments from debian/rules override sections."""
     args = []
     if build_tool == 'cmake':
-        common = [{'name': 'CMAKE_INSTALL_PREFIX', 'default': '/usr'},
+        common = [{'name': 'CMAKE_INSTALL_PREFIX', 'default': '${PREFIX}'},
                   {'name': 'CMAKE_BUILD_TYPE', 'default': 'Release'}]
         if os.path.exists(rules_path):
             with open(rules_path, 'r', encoding='utf-8') as f:
@@ -85,13 +85,13 @@ def extract_build_args_from_rules(rules_path: str, build_tool: str) -> list:
                             a['default'] = vm.group(1)
         return common
     elif build_tool == 'meson':
-        return [{'name': 'prefix', 'default': '/usr'},
+        return [{'name': 'prefix', 'default': '${PREFIX}'},
                 {'name': 'buildtype', 'default': 'debugoptimized'}]
     elif build_tool == 'autotools':
-        return [{'name': 'prefix', 'default': '/usr'},
+        return [{'name': 'prefix', 'default': '${PREFIX}'},
                 {'name': 'host', 'default': ''}]
     else:
-        return [{'name': 'prefix', 'default': '/usr/local'},
+        return [{'name': 'prefix', 'default': '${PREFIX}'},
                 {'name': 'DESTDIR', 'default': ''}]
 
 
@@ -169,7 +169,7 @@ def generate_build_section(build_tool: str, build_args: list) -> str:
     elif build_tool == 'autotools':
         args_str = ' '.join(f'--{a["name"]}={a["default"]}' for a in build_args)
         return (
-            f"./configure --prefix=${{prefix}} {args_str}\n"
+            f"./configure {args_str}\n"
             f"make -j$(nproc)\n"
             f"make install DESTDIR=${{prefix}}"
         )

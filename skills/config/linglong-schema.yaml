@@ -5,6 +5,13 @@
 # 基于 docs/manifests-for-yaml.md 定义的合法字段结构约束
 # 用于 validate-linglong-yaml.py 检查生成的 linglong.yaml 是否包含非法字段
 
+# 安装目录约束：所有构建工具的安装目录参数必须使用 ${PREFIX} 而非硬编码路径
+# - cmake: -DCMAKE_INSTALL_PREFIX=${PREFIX}
+# - meson: -Dprefix=${PREFIX}
+# - autotools: --prefix=${PREFIX}
+# - make: prefix=${PREFIX}
+# 二进制文件必须安装到 ${PREFIX}/bin，库文件必须安装到 ${PREFIX}/lib
+
 version: "1"
 
 # 合法顶级字段白名单
