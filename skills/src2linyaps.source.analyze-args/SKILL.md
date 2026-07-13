@@ -39,7 +39,7 @@ build_tool: make
 build_tool_type: make
 build_args:
   - name: prefix
-    default: /usr/local
+    default: ${PREFIX}
   - name: DESTDIR
     default: ""
 ```
@@ -50,3 +50,4 @@ build_args:
 - 如果配置文件中自定义了常用参数值，优先使用自定义值而非默认值
 - meson 通过 `meson_options.txt` 解析，cmake 从 `CMakeLists.txt` 解析，make 从 `Makefile` 解析
 - 使用 `scripts/extract-build-args.py` 辅助解析
+- **安装目录约束**：所有安装目录参数（如 `prefix`、`CMAKE_INSTALL_PREFIX`）的默认值必须使用 `${PREFIX}` 而非硬编码路径（如 `/usr`、`/usr/local`），确保编译产物安装到玲珑沙箱的正确位置

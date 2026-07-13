@@ -39,6 +39,7 @@ NO_VERSION_CONSTRAINT = "dep entry '{dep}' still contains version constraint"
 UNKNOWN_TOP_LEVEL = "unknown top-level field '{key}' (not in schema allowed list)"
 FORBIDDEN_PATH = "forbidden field path '{path}': {message}"
 SCHEMA_NOT_FOUND = "schema file not found at {path}, skipping field legality checks"
+HARDCODED_PREFIX = "field 'build' uses hardcoded path '{match}' instead of ${{PREFIX}}"
 
 
 def load_schema(schema_path: str) -> dict | None:
@@ -144,6 +145,31 @@ def validate(path: str, schema_path: str = "") -> list:
     build_val = data.get('build')
     if not isinstance(build_val, str):
         errors.append(f"{BUILD_MUST_BE_STR} (got {type(build_val).__name__})")
+    else:
+        # 8a. Check for hardcoded install paths in build section
+        hardcoded_checks = [
+            # prefix-level variables
+            (r'-DCMAKE_INSTALL_PREFIX=/(?!\$\{PREFIX\}|\$PREFIX)', '-DCMAKE_INSTALL_PREFIX=<hardcoded_path>'),
+            (r'-Dprefix=/(?!\$\{PREFIX\}|\$PREFIX)', '-Dprefix=<hardcoded_path>'),
+            (r'(?<!-D)--prefix=/(?!\$\{PREFIX\}|\$PREFIX)', '--prefix=<hardcoded_path>'),
+            (r'(?<![-\w])prefix=/(?!\$\{PREFIX\}|\$PREFIX)', 'prefix=<hardcoded_path>'),
+            # CMake subdirectory install vars
+            (r'-DCMAKE_INSTALL_(?:BINDIR|LIBDIR|INCLUDEDIR|DATADIR|SYSCONFDIR|LOCALSTATEDIR|LIBEXECDIR|SBINDIR|MANDIR|DOCDIR|INFODIR)=/(?!\$\{PREFIX\}|\$PREFIX)', '-DCMAKE_INSTALL_<DIR>=<hardcoded_path>'),
+            # Autotools subdirectory options
+            (r'(?<!-D)--(?:bindir|libdir|sbindir|sysconfdir|datadir|includedir|libexecdir|localstatedir|mandir|docdir|infodir)=/(?!\$\{PREFIX\}|\$PREFIX)', '--<dir>=<hardcoded_path>'),
+            # DESTDIR for staging installs
+            (r'DESTDIR=/(?!\$\{PREFIX\}|\$PREFIX)', 'DESTDIR=<hardcoded_path>'),
+            # INSTALL_ROOT (used in some CMake projects)
+            (r'INSTALL_ROOT=/(?!\$\{PREFIX\}|\$PREFIX)', 'INSTALL_ROOT=<hardcoded_path>'),
+            # PREFIX uppercase (Makefile variable, case-sensitive gap)
+            (r'(?<![-\w])PREFIX=/(?!\$\{PREFIX\}|\$PREFIX)', 'PREFIX=<hardcoded_path>'),
+            # LIB_INSTALL_DIR (used in qmake / some CMake projects)
+            (r'LIB_INSTALL_DIR=/(?!\$\{PREFIX\}|\$PREFIX)', 'LIB_INSTALL_DIR=<hardcoded_path>'),
+        ]
+        for pattern, display in hardcoded_checks:
+            m = re.search(pattern, build_val)
+            if m:
+                errors.append(HARDCODED_PREFIX.format(match=display))
 
     # 9. No sources section
     if 'sources' in data:

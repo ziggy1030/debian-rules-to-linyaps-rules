@@ -90,6 +90,7 @@ build: |
 - 脚本使用 `skills/config/linglong-defaults.json` 作为默认值参考
 - 使用 `scripts/generate-linglong-yaml.py` 辅助生成
 - 使用 `scripts/validate-linglong-yaml.py` 验证生成结果格式
+- `${PREFIX} 安装目录约束`：`build:` 字段中所有安装目录路径必须使用 `${PREFIX}`（大写）而非硬编码的 `/usr`。脚本 `generate-linglong-yaml.py` 会自动将 `${prefix}`（小写）替换为 `${PREFIX}`，并通过正则匹配将常见硬编码路径（如 `-DCMAKE_INSTALL_PREFIX=/usr`、`DESTDIR=/usr`、`--prefix=/usr`、`PREFIX=/usr/local` 等）替换为 `${PREFIX}`，作为 LLM 生成的 `build_section` 的安全网层
 
 ## 默认值配置 (`skills/config/linglong-defaults.json`)
 
