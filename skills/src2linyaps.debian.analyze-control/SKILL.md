@@ -25,6 +25,7 @@ user-invocable: false
 |------|------|------|
 | control_content | string | `debian/control` 文件的完整文本内容 |
 | project_path | string | 项目源码根目录路径 |
+| agent_config_path | string | `agent-config.json` 的绝对路径，由主 agent 在 Step 1 解析后传入 |
 
 ## 工作流程
 

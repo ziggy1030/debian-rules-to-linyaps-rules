@@ -131,7 +131,7 @@
 
 ## 配置
 
-`agent-config.json` 全局配置：
+`agent-config.json` 全局配置（标准版；Multica 版配置详见 `for-multica/` 目录）：
 
 ```json
 {
@@ -150,6 +150,10 @@
 ```
 
 `${tag}` 使用 `date +"%Y-%m-%d"` 实时解析。
+
+### Multica 版配置
+
+`for-multica/agent.md` 顶部声明 `AGENT_CONFIG_PATH` 变量指向 `for-multica/agent-config.json`，所有下游 skill 通过 `agent_config_path` 参数接收该路径，集中管理配置入口。改路径只需修改 `agent.md` 顶部一行声明。`agent-config.json` 包含 `global`、`extension`、`assignment` 三个区段。
 
 ## 输出格式
 
@@ -221,8 +225,8 @@ bash tests/test-mismatch.sh
 
 | 文件 | 说明 |
 |------|------|
-| `for-multica/agent-config.json` | Multica 变体配置（含 `projects_repo`、`workspace`、`assignment`） |
-| `for-multica/agent.md` | Multica 工作流 agent（Git 初始化 + 路径分析 + 指派 packer） |
+| `for-multica/agent.md` | Multica 工作流 agent（声明 `AGENT_CONFIG_PATH` 变量，注入 `agent_config_path` 参数给所有下游 skill） |
+| `for-multica/agent-config.json` | Multica 配置（含 `projects_repo`、`workspace`、`assignment` 等） |
 | `for-multica/scripts/check-agent-status.sh` | Agent 状态查询脚本（热备方案） |
 
 multica 工作流在标准分析流程末端增加：

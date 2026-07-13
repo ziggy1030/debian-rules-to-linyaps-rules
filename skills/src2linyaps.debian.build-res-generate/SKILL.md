@@ -28,6 +28,7 @@ user-invocable: false
 | `base` | string | base 镜像 | `defaults.json` |
 | `runtime` | string | runtime 镜像 | `defaults.json` |
 | `command` | string | 启动命令，按空格切割为 YAML 数组元素 | `defaults.json` |
+| `agent_config_path` | string | `agent-config.json` 的绝对路径，由主 agent 在 Step 1 解析后传入 | 主 agent |
 
 ## 工作流程
 

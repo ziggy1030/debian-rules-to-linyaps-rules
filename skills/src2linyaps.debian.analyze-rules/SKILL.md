@@ -25,6 +25,7 @@ user-invocable: false
 | project_path | string | 项目源码根目录路径 |
 | debian_path | string | `debian/` 目录路径 |
 | control_info | dict | `analyze-control` 输出的结构化信息 |
+| agent_config_path | string | `agent-config.json` 的绝对路径，由主 agent 在 Step 1 解析后传入 |
 
 ## 工作流程
 
