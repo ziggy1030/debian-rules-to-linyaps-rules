@@ -140,9 +140,46 @@ def scan_resource_files(debian_path: str) -> dict:
     return resources
 
 
-def extract_build_depends_from_rules(rules_path: str, control_depends: list = None) -> list:
-    """Merge build depends from control with any additional ones from rules."""
-    return control_depends or []
+def generate_build_section(build_tool: str, build_args: list) -> str:
+    """Generate build_section shell script based on build tool type and args."""
+
+    def fmt_arg(name, value):
+        return f'-D{name}={value}'
+
+    if build_tool == 'cmake':
+        args_str = ' \\\n    '.join(fmt_arg(a['name'], a['default']) for a in build_args)
+        return (
+            f"cmake -B build-linglong \\\n    {args_str}\n"
+            f"cmake --build build-linglong -j$(nproc)\n"
+            f"cmake --install build-linglong"
+        )
+    elif build_tool == 'meson':
+        args_str = ' '.join(f'-D{a["name"]}={a["default"]}' for a in build_args)
+        return (
+            f"meson setup build-linglong {args_str}\n"
+            f"ninja -C build-linglong -j$(nproc)\n"
+            f"DESTDIR=${{prefix}} meson install -C build-linglong"
+        )
+    elif build_tool == 'make':
+        args_str = ' '.join(f'{a["name"]}={a["default"]}' for a in build_args)
+        return (
+            f"make -j$(nproc) {args_str}\n"
+            f"make install {args_str} DESTDIR=${{prefix}}"
+        )
+    elif build_tool == 'autotools':
+        args_str = ' '.join(f'--{a["name"]}={a["default"]}' for a in build_args)
+        return (
+            f"./configure --prefix=${{prefix}} {args_str}\n"
+            f"make -j$(nproc)\n"
+            f"make install DESTDIR=${{prefix}}"
+        )
+    else:
+        return (
+            "cp -rf /project/binary/* ${prefix}/\n"
+            "cp -rf /project/files_res/* ${prefix}/\n"
+            "touch ${prefix}/.linyaps_genius\n"
+            "chmod -R 755 ${prefix}"
+        )
 
 
 def analyze(project_path: str, debian_path: str, control_info: dict = None) -> dict:
@@ -168,6 +205,7 @@ def analyze(project_path: str, debian_path: str, control_info: dict = None) -> d
         'build_tool_type': build_tool,
         'baseline': baseline,
         'build_args': build_args,
+        'build_section': generate_build_section(build_tool, build_args),
     }
 
     if resources:
@@ -178,6 +216,7 @@ def analyze(project_path: str, debian_path: str, control_info: dict = None) -> d
         result['pkgName'] = control_info.get('pkgName', '')
         result['pkgDescription'] = control_info.get('pkgDescription', '')
         result['build_depends'] = control_info.get('buildDepends', [])
+        result['runtimeDepends'] = control_info.get('runtimeDepends', [])
 
     return result
 

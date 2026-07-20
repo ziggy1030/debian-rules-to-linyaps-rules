@@ -1,0 +1,19 @@
+[
+  "gcc", "g++", "gcc-14-base", "gcc-14", "g++-14", "cpp", "cpp-14",
+  "binutils", "binutils-common", "binutils-x86-64-linux-gnu",
+  "libbinutils", "libctf-nobfd0", "libctf0",
+  "make", "cmake", "meson", "ninja-build",
+  "pkg-config", "pkgconf", "pkgconf-bin",
+  "autoconf", "automake", "autotools-dev", "libtool", "m4",
+  "bison", "flex", "gawk",
+  "llvm", "llvm-17", "clang", "clang-17", "lld", "lld-17",
+  "compiler-rt", "compiler-rt-17",
+  "rustc", "cargo", "golang", "go",
+  "mesa", "mesa-common-dev",
+  "libgl1-mesa-glx", "libgl1-mesa-dri",
+  "libegl-mesa0", "libegl1-mesa",
+  "libgles2-mesa",
+  "libglx-mesa0",
+  "mesa-va-drivers", "mesa-vdpau-drivers", "mesa-vulkan-drivers",
+  "libvulkan1", "libvulkan-dev"
+]

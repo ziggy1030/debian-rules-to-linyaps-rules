@@ -1,8 +1,8 @@
 ---
 name: src2linyaps.debian.analyze-control
 description: >
-  解析 debian/control 文件，提取源码包名、构建依赖列表、描述信息等结构化数据。
-  处理多个 Package 条目的全量合并去重。
+   解析 debian/control 文件，提取源码包名、构建依赖列表、描述信息等结构化数据。
+   处理多个 Package 条目的全量合并去重。基于 apt 仓库解析构建依赖的运行时依赖。
 user-invocable: false
 ---
 
@@ -13,6 +13,7 @@ user-invocable: false
 - `Build-Depends:` / `Build-Depends-Arch:` / `Build-Depends-Indep:` → 构建依赖列表（并集去重）
 - `Description:` → 项目描述
 - 所有 `Package:` 条目名称
+- 基于 apt 仓库解析 Build-Depends 各包的运行时依赖 → `runtimeDepends`
 
 ## 触发场景
 
@@ -34,7 +35,11 @@ user-invocable: false
 5. 遍历所有 `Package:` 条目，收集 binary 包名称
 6. 对多个 Package 条目的构建依赖做并集去重
 7. 解析 `Description:` 字段（取第一个 Package 条目的描述）
-8. 输出结构化结果
+8. 基于 apt 仓库逐包查询 Build-Depends 的运行时依赖：
+- 调用 `scripts/parse-control.py <control_file>` → 输出 YAML（含 buildDepends）
+  - 调用 `scripts/resolve-runtime-deps.py <control_yaml> --blacklist runtime-depends-blacklist.json` → 输出 YAML（含 runtimeDepends，已过滤黑名单包）
+   - Agent 合并两个 YAML 结果
+9. 输出结构化结果
 
 ## 输出
 
@@ -46,6 +51,12 @@ buildDepends:
   - dh-sequence-kf6
   - cmake (>= 3.16~)
   - extra-cmake-modules
+  - ...
+runtimeDepends:        # 基于 apt 仓库解析的运行时依赖
+  - libc6
+  - libcurl4
+  - libarchive13
+  - qt6-base-dev
   - ...
 binaryPackages:
   - kate
@@ -60,3 +71,7 @@ binaryPackages:
 - 不再区分主包和 common-data，全部合并到同一个输出
 - 依赖项中的版本约束（如 `(= 13)`、`(>= 3.16~)`）完整保留
 - 使用 `scripts/parse-control.py` 辅助解析
+- 使用 `scripts/resolve-runtime-deps.py` 查询运行时依赖
+- 运行时依赖通过 `LC_ALL=C apt-cache depends` 查询，需要系统已配置 apt 仓库
+- 若 `apt-cache` 不可用或查询失败，`runtimeDepends` 输出空列表（不影响主流程）
+- 支持黑名单机制：`runtime-depends-blacklist.json` 中列出的包名会被从 `runtimeDepends` 中剔除，避免编译器、Mesa 驱动等非应用核心组件被错误写入
