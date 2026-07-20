@@ -85,6 +85,24 @@ def add_section_breaks(yaml_str: str) -> str:
     return '\n'.join(result)
 
 
+def replace_hardcoded_prefixes(s: str) -> str:
+    patterns = [
+        (r'(-DCMAKE_INSTALL_PREFIX=)(?!\$\{PREFIX\}|\$PREFIX)\S+', r'\1${PREFIX}'),
+        (r'(-Dprefix=)(?!\$\{PREFIX\}|\$PREFIX)\S+', r'\1${PREFIX}'),
+        (r'(--prefix=)(?!\$\{PREFIX\}|\$PREFIX)\S+', r'\1${PREFIX}'),
+        (r'(?<![-\w])(prefix=)(?!\$\{PREFIX\}|\$PREFIX)\S+', r'\1${PREFIX}'),
+        (r'(-DCMAKE_INSTALL_(?:BINDIR|LIBDIR|INCLUDEDIR|DATADIR|SYSCONFDIR|LOCALSTATEDIR|LIBEXECDIR|SBINDIR|MANDIR|DOCDIR|INFODIR)=)(?!\$\{PREFIX\}|\$PREFIX)/usr/', r'\1${PREFIX}/'),
+        (r'(?<!-D)(--(?:bindir|libdir|sbindir|sysconfdir|datadir|includedir|libexecdir|localstatedir|mandir|docdir|infodir)=)(?!\$\{PREFIX\}|\$PREFIX)/usr/', r'\1${PREFIX}/'),
+        (r'(DESTDIR=)(?!\$\{PREFIX\}|\$PREFIX)\S+', r'\1${PREFIX}'),
+        (r'(INSTALL_ROOT=)(?!\$\{PREFIX\}|\$PREFIX)\S+', r'\1${PREFIX}'),
+        (r'(?<![-\w])(PREFIX=)(?!\$\{PREFIX\}|\$PREFIX)\S+', r'\1${PREFIX}'),
+        (r'(LIB_INSTALL_DIR=)(?!\$\{PREFIX\}|\$PREFIX)/usr/', r'\1${PREFIX}/'),
+    ]
+    for pattern, replacement in patterns:
+        s = re.sub(pattern, replacement, s)
+    return s
+
+
 def build_yaml(data, build_section, version, architecture, base, runtime, command, with_deps):
     pkg_name = data.get('pkgName', '') or ''
     description = data.get('pkgDescription', '') or ''
@@ -94,6 +112,7 @@ def build_yaml(data, build_section, version, architecture, base, runtime, comman
     build_depends = [strip_version_constraint(d) for d in raw_build_depends if strip_version_constraint(d)]
 
     build_section = build_section.replace('${prefix}', '${PREFIX}')
+    build_section = replace_hardcoded_prefixes(build_section)
     if not build_section.endswith('\n'):
         build_section += '\n'
     build_section += 'touch ${PREFIX}/.linyaps_genius\n'

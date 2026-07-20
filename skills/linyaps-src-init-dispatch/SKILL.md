@@ -18,7 +18,7 @@ user-invocable: false
 ## 目录约定
 
 - 共享脚本：`scripts/dispatch.sh`（统一入口）
-- 配置来源：`for-multica/agent-config.json` 的 `assignment` 区段
+- 配置来源：`agent_config_path` 参数指向的 `agent-config.json` 的 `assignment` 区段
 - 本 skill 脚本：`skills/linyaps-src-init-dispatch/scripts/`
 
 ## 三种 Action 接口
@@ -39,7 +39,7 @@ Git 提交成功后，向 `linyaps-packer-*` 智能体发起打包指派。
   "workflow_type": "debian-rules-to-linyaps",
   "data_dir": "./data/2026-07-09.log",
   "workspace": "linyaps",
-  "config": "for-multica/agent-config.json"
+  "agent_config_path": "/path/to/for-multica/agent-config.json"
 }
 ```
 
@@ -82,7 +82,8 @@ Git 提交成功后，向 `linyaps-packer-*` 智能体发起打包指派。
   "action": "update_issue_status",
   "success_count": 8,
   "fail_count": 1,
-  "workspace": "linyaps"
+  "workspace": "linyaps",
+  "agent_config_path": "/path/to/for-multica/agent-config.json"
 }
 ```
 
@@ -112,7 +113,8 @@ Git 提交成功后，向 `linyaps-packer-*` 智能体发起打包指派。
 {
   "action": "check_agent_status",
   "agent_name": "linyaps-packer-1",
-  "workspace": "linyaps"
+  "workspace": "linyaps",
+  "agent_config_path": "/path/to/for-multica/agent-config.json"
 }
 ```
 
@@ -128,7 +130,7 @@ Git 提交成功后，向 `linyaps-packer-*` 智能体发起打包指派。
 
 ## 指派目标配置
 
-定义在 `for-multica/agent-config.json` 的 `assignment` 区段，本 skill **只读读取**，不自持配置。
+定义在 `agent_config_path` 指向的 `agent-config.json` 的 `assignment` 区段，本 skill **只读读取**，不自持配置。
 
 ### `assignment.agents[]`
 
@@ -148,5 +150,5 @@ Git 提交成功后，向 `linyaps-packer-*` 智能体发起打包指派。
 ## 约束
 
 1. **仅 debian-rules-to-linyaps agent 调用**：此 skill 不应被其他 agent 使用
-2. **与 agent-config.json 的 assignment 区段绑定**：目标 agent 列表从配置读取
+2. **与 agent_config_path 指向的 agent-config.json 的 assignment 区段绑定**：目标 agent 列表从配置读取
 3. **`check_endpoint` 冷备未上线**：当前使用 `check-agent-status.sh` 脚本作为热备方案；后续上线后改由端点查询

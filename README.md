@@ -131,7 +131,7 @@
 
 ## 配置
 
-`agent-config.json` 全局配置：
+`agent-config.json` 全局配置（标准版；Multica 版配置详见 `for-multica/` 目录）：
 
 ```json
 {
@@ -151,6 +151,10 @@
 
 `${tag}` 使用 `date +"%Y-%m-%d"` 实时解析。
 
+### Multica 版配置
+
+`for-multica/agent.md` 顶部声明 `AGENT_CONFIG_PATH` 变量指向 `for-multica/agent-config.json`，所有下游 skill 通过 `agent_config_path` 参数接收该路径，集中管理配置入口。改路径只需修改 `agent.md` 顶部一行声明。`agent-config.json` 包含 `global`、`extension`、`assignment` 三个区段。
+
 ## 输出格式
 
 最终 YAML 写入 `output/${tag}/final-${pkgName || projectName}.yaml`：
@@ -167,7 +171,7 @@ build_depends:
   - cmake
 build_args:
   - name: CMAKE_INSTALL_PREFIX
-    default: /usr
+    default: ${PREFIX}
   - name: CMAKE_BUILD_TYPE
     default: Release
 resources:
@@ -214,6 +218,7 @@ bash tests/test-mismatch.sh
 | Version 字段 | 从 `debian/changelog` 提取 baseline 版本号，fallback 使用 `linglong-defaults.json` |
 | Base/Runtime | 默认 `org.deepin.base/25.2.2` + `org.deepin.runtime.dtk/25.2.2`，支持 CSV/JSON 覆盖 |
 | 输出校验 | 必须通过 `validate-linglong-yaml.py --schema linglong-schema.yaml` 校验 |
+| `${PREFIX}` 安装目录 | `build:` 段所有安装目录参数必须使用 `${PREFIX}` 而非硬编码的 `/usr`/`/usr/local`。`generate-linglong-yaml.py` 会自动替换常见硬编码路径为 `${PREFIX}`（安全网），`validate-linglong-yaml.py` 再校验残留 |
 
 ## Multica 集成
 
@@ -221,8 +226,8 @@ bash tests/test-mismatch.sh
 
 | 文件 | 说明 |
 |------|------|
-| `for-multica/agent-config.json` | Multica 变体配置（含 `projects_repo`、`workspace`、`assignment`） |
-| `for-multica/agent.md` | Multica 工作流 agent（Git 初始化 + 路径分析 + 指派 packer） |
+| `for-multica/agent.md` | Multica 工作流 agent（声明 `AGENT_CONFIG_PATH` 变量，注入 `agent_config_path` 参数给所有下游 skill） |
+| `for-multica/agent-config.json` | Multica 配置（含 `projects_repo`、`workspace`、`assignment` 等） |
 | `for-multica/scripts/check-agent-status.sh` | Agent 状态查询脚本（热备方案） |
 
 multica 工作流在标准分析流程末端增加：
