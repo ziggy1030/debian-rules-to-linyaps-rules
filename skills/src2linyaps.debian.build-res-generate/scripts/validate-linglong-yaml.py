@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-validate-linglong-yaml.py — 检测生成的 linglong.yaml 格式化问题。
+validate-linglong-yaml.py — 检测生成的 linglong.yaml 格式化与字段合法性。
 
 检查项:
   - YAML 可解析
@@ -12,16 +12,17 @@ validate-linglong-yaml.py — 检测生成的 linglong.yaml 格式化问题。
   - build 为字符串
   - 无 sources 段（按约束）
   - build_depends 条目无版本约束残留
+  - 无非法字段（基于 skills/config/linglong-schema.yaml 约束）
 
 用法:
-    python3 validate-linglong-yaml.py <path> [--command command]
-    python3 validate-linglong-yaml.py <path> --command "kate --new"
+    python3 validate-linglong-yaml.py <path> [--schema <path>]
 
 退出码: 0 = 通过, 1 = 失败
 """
 
 import argparse
 import json
+import os
 import re
 import sys
 import yaml
@@ -35,9 +36,44 @@ DEPS_MUST_BE_LIST = "buildext.apt.{key} must be a list"
 BUILD_MUST_BE_STR = "field 'build' must be a string"
 NO_SOURCES = "sources section should not be present (use constraint)"
 NO_VERSION_CONSTRAINT = "dep entry '{dep}' still contains version constraint"
+UNKNOWN_TOP_LEVEL = "unknown top-level field '{key}' (not in schema allowed list)"
+FORBIDDEN_PATH = "forbidden field path '{path}': {message}"
+SCHEMA_NOT_FOUND = "schema file not found at {path}, skipping field legality checks"
 
 
-def validate(path: str) -> list:
+def load_schema(schema_path: str) -> dict | None:
+    if not os.path.isfile(schema_path):
+        print(f"  [warn] {SCHEMA_NOT_FOUND.format(path=schema_path)}", file=sys.stderr)
+        return None
+    with open(schema_path, 'r', encoding='utf-8') as f:
+        return yaml.safe_load(f)
+
+
+def check_top_level_keys(data: dict, schema: dict, errors: list):
+    allowed = set(schema.get('top_level', {}).get('allowed', []))
+    for key in data:
+        if key not in allowed:
+            errors.append(UNKNOWN_TOP_LEVEL.format(key=key))
+
+
+def check_forbidden_paths(data, schema, errors, parent_path=""):
+    forbidden_rules = schema.get('forbidden_paths', [])
+    forbidden_map = {rule['path']: rule['message'] for rule in forbidden_rules}
+
+    def _walk(obj, current_path):
+        if not isinstance(obj, dict):
+            return
+        for key, value in obj.items():
+            path = f"{current_path}.{key}" if current_path else key
+            if path in forbidden_map:
+                errors.append(FORBIDDEN_PATH.format(path=path, message=forbidden_map[path]))
+            if isinstance(value, dict):
+                _walk(value, path)
+
+    _walk(data, parent_path)
+
+
+def validate(path: str, schema_path: str = "") -> list:
     errors = []
 
     # 1. Parse YAML
@@ -114,21 +150,38 @@ def validate(path: str) -> list:
         errors.append(NO_SOURCES)
 
     # 10. build_depends entries with version constraints
-    apt = (data.get('buildext') or {}).get('apt') or {}
-    for dep in apt.get('build_depends') or []:
-        if isinstance(dep, str):
-            if re.search(r'\([^)]*\)', dep) or re.search(r'[><=!]', dep):
-                errors.append(NO_VERSION_CONSTRAINT.format(dep=dep))
+    apt_raw = (data.get('buildext') or {}).get('apt') or {}
+    if isinstance(apt_raw, dict):
+        for dep in apt_raw.get('build_depends') or []:
+            if isinstance(dep, str):
+                if re.search(r'\([^)]*\)', dep) or re.search(r'[><=!]', dep):
+                    errors.append(NO_VERSION_CONSTRAINT.format(dep=dep))
+
+    # 11. Schema-based field legality checks
+    if schema_path:
+        schema = load_schema(schema_path)
+        if schema:
+            check_top_level_keys(data, schema, errors)
+            check_forbidden_paths(data, schema, errors)
 
     return errors
+
+
+def default_schema_path() -> str:
+    script_dir = os.path.dirname(os.path.abspath(__file__))
+    return os.path.join(script_dir, '..', '..', '..', 'skills', 'config', 'linglong-schema.yaml')
 
 
 def main():
     parser = argparse.ArgumentParser(description='Validate linglong.yaml formatting')
     parser.add_argument('path', help='Path to linglong.yaml')
+    parser.add_argument('--schema', default='',
+                        help='Path to schema constraint file (default: auto-detect)')
     args = parser.parse_args()
 
-    errors = validate(args.path)
+    schema_path = args.schema or default_schema_path()
+
+    errors = validate(args.path, schema_path)
 
     if errors:
         print(f"FAIL: {len(errors)} issue(s) found", file=sys.stderr)
