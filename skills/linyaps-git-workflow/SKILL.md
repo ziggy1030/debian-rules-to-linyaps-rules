@@ -15,7 +15,7 @@ user-invocable: false
 ## 目录约定
 
 - 入口脚本：`scripts/git-workflow.sh`（统一入口）
-- 配置来源：`for-multica/agent-config.json` 的 `global` 区段
+- 配置来源：`agent_config_path` 参数指向的 `agent-config.json` 的 `global` 区段
 - 本 skill 脚本：`skills/linyaps-git-workflow/scripts/`
 
 ## 两种 Action 接口
@@ -31,7 +31,8 @@ Git 仓库克隆 + 推送权限验证。
 {
   "action": "init_repo",
   "projects_repo": "https://git.example.com/projects.git",
-  "projects_root": "./projects"
+  "projects_root": "./projects",
+  "agent_config_path": "/path/to/for-multica/agent-config.json"
 }
 ```
 
@@ -62,7 +63,8 @@ Git 仓库克隆 + 推送权限验证。
 {
   "action": "commit_and_push",
   "projects_root": "./projects",
-  "data_dir": "./data/2026-07-09.log"
+  "data_dir": "./data/2026-07-09.log",
+  "agent_config_path": "/path/to/for-multica/agent-config.json"
 }
 ```
 
@@ -92,5 +94,5 @@ Git 仓库克隆 + 推送权限验证。
 ## 约束
 
 1. **仅 debian-rules-to-linyaps agent 调用**
-2. **与 agent-config.json 的 global.projects_repo 绑定**
+2. **与 agent_config_path 指向的 agent-config.json 的 global.projects_repo 绑定**
 3. push 失败视为阻塞性错误，与初始化失败同等处理

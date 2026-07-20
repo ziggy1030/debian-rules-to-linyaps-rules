@@ -20,7 +20,7 @@ import yaml
 def extract_cmake_args(project_path: str) -> list:
     """Extract build args from CMakeLists.txt."""
     args = [
-        {'name': 'CMAKE_INSTALL_PREFIX', 'default': '/usr/local'},
+        {'name': 'CMAKE_INSTALL_PREFIX', 'default': '${PREFIX}'},
         {'name': 'CMAKE_BUILD_TYPE', 'default': 'Release'},
     ]
     cmake_file = os.path.join(project_path, 'CMakeLists.txt')
@@ -41,7 +41,7 @@ def extract_cmake_args(project_path: str) -> list:
 def extract_meson_args(project_path: str) -> list:
     """Extract build args from meson_options.txt."""
     args = [
-        {'name': 'prefix', 'default': '/usr/local'},
+        {'name': 'prefix', 'default': '${PREFIX}'},
         {'name': 'buildtype', 'default': 'debugoptimized'},
     ]
     options_file = os.path.join(project_path, 'meson_options.txt')
@@ -62,7 +62,7 @@ def extract_meson_args(project_path: str) -> list:
 def extract_make_args(project_path: str) -> list:
     """Extract build args from Makefile."""
     args = [
-        {'name': 'prefix', 'default': '/usr/local'},
+        {'name': 'prefix', 'default': '${PREFIX}'},
         {'name': 'DESTDIR', 'default': ''},
     ]
     for makefile in ['Makefile', 'GNUmakefile', 'makefile']:
@@ -86,7 +86,7 @@ def extract_make_args(project_path: str) -> list:
 def extract_autotools_args(project_path: str) -> list:
     """Extract build args from configure script."""
     return [
-        {'name': 'prefix', 'default': '/usr/local'},
+        {'name': 'prefix', 'default': '${PREFIX}'},
         {'name': 'host', 'default': ''},
     ]
 
