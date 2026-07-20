@@ -1,9 +1,13 @@
 {
   "global": {
+    "projects_root": "./src",
     "output_dir": "./output/${tag}",
     "data_dir": "./data/${tag}.log",
     "build_tmp_dir": "./build_cache",
-    "src_dir": "./src"
+    "src_dir": "./src",
+    "base": "org.deepin.base/25.2.2",
+    "runtime": "org.deepin.runtime.dtk/25.2.2",
+    "architecture": "x86_64"
   },
   "extension": [
     {
